@@ -10,8 +10,33 @@ Game.UpdateMenu = function() {
 };
 
 Game.customSave.push(function() {
-	//alert('saved');
+	
+	var editorExtensionId = "kfpefnknagfhjhigfcalmagikllodadh";
+
+	// Make a simple request:
+	chrome.runtime.sendMessage(editorExtensionId, {openUrlInEditor: 'alertme'},
+	  function(response) {
+		
+	  });
+	
+	
+	//Get the current sync data.
+	var cookieCount = "";
+    chrome.storage.sync.get('ChromeCookiesScore', function (result) {
+        score = result.ChromeCookiesScore;
+        alert(score + "score");
+    });
+	
+	//Is the score lower than ours? If so, push our new score to sync.
+	if (score < Game.cookies) {
+		chrome.storage.sync.set({'ChromeCookiesScore': Game.cookies });
+		chrome.storage.sync.set({'ChromeCookiesValue': Game.WriteSave(1) });
+	}
 });
+
+function load() {
+    
+} 
 
 var cookieSaver = {
   addLoadButton: function() {
