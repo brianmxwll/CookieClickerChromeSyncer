@@ -1,3 +1,5 @@
+console.log('Setup.js init');
+
 setTimeout(function() {
 	var s = document.createElement('script');
 	//console.log(chrome.storage.sync);
@@ -6,4 +8,6 @@ setTimeout(function() {
 		this.parentNode.removeChild(this);
 	};
 	(document.head||document.documentElement).appendChild(s);
-}, 2000);
+	
+	console.log('Content script injected.');
+}, 1000);
