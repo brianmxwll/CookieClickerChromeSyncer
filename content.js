@@ -1,3 +1,24 @@
+
+
+// The ID of the extension we want to talk to.
+var editorExtensionId = "kfpefnknagfhjhigfcalmagikllodadh";
+
+var lastSave = 0;
+
+function LoadFromGoogle() {
+	console.log('Load From Google!');
+	var params = {
+		action: 'load'
+	};
+
+	// Make a simple request:
+	chrome.runtime.sendMessage(editorExtensionId, params,
+		function(response) {
+			Game.LoadSave(response.save);
+			console.log('Game loaded from Google.');
+	});
+}
+
 var cookieSaver = {
 	addLoadButton: function() {
 		var menu = document.getElementById('menu');
@@ -7,7 +28,7 @@ var cookieSaver = {
 				var saveListing = parent.childNodes[1];
 				if (saveListing != null) {
 					var div = document.createElement('div');
-					div.innerHTML = '<a class="option" onclick="Game.WriteSave();">Load From Google</a><label>Load the game from Google online storage.</label>';
+					div.innerHTML = '<a class="option" onclick="LoadFromGoogle();">Load From Google</a><label>Load the game from Google online storage.</label>';
 					div.className = 'listing';
 					
 					parent.insertBefore(div, saveListing);
@@ -31,38 +52,32 @@ var cookieSaver = {
 		Game.customSave.push(function() {
 			console.log('Save function executing.');
 			
-			// The ID of the extension we want to talk to.
-			var editorExtensionId = "kfpefnknagfhjhigfcalmagikllodadh";
+			//If we have not saved in the last 5 seconds.
+			if (Date.now() - lastSave > 5000) {
+				console.log('Saving...');
+				lastSave = Date.now();
 
-			// Make a simple request:
-			chrome.runtime.sendMessage(editorExtensionId, {openUrlInEditor: 'words'},
-				function(response) {
-					console.log(response);
-			});
-			
-			/*
-			//Get the current sync data.
-			var cookieCount = "";
-			chrome.storage.sync.get('ChromeCookiesScore', function (result) {
-				score = result.ChromeCookiesScore;
-				alert(score + "score");
-			});
-			
-			//Is the score lower than ours? If so, push our new score to sync.
-			if (score < Game.cookies) {
-				chrome.storage.sync.set({'ChromeCookiesScore': Game.cookies });
-				chrome.storage.sync.set({'ChromeCookiesValue': Game.WriteSave(1) });
+				var params = {
+					action: 'save',
+					cookies: Game.cookies,
+					save: Game.WriteSave(1)
+				};
+
+				// Make a simple request:
+				chrome.runtime.sendMessage(editorExtensionId, params,
+					function(response) {
+						console.log("Game saved to Google!");
+				});
 			}
-			*/
 		});
 	}
 };
 
 
 var waitThenRun = {
-	Game: function() {
-		if (Game == undefined) {
-			setTimeout(waitThenRun.Game, 500);
+	UpdateMenu: function() {
+		if (Game.UpdateMenu == undefined) {
+			setTimeout(waitThenRun.UpdateMenu, 500);
 		} else {
 			cookieSaver.moveUpdateFunc();
 		}
@@ -76,7 +91,7 @@ var waitThenRun = {
 	}
 };
 
-waitThenRun.Game();
+waitThenRun.UpdateMenu();
 waitThenRun.CustomSave();
 
 
