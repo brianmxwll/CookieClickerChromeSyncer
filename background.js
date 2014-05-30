@@ -5,16 +5,23 @@ chrome.runtime.onMessageExternal.addListener(
 			//Get the current sync data.
 			chrome.storage.sync.get('ChromeCookiesScore', function (result) {
 				if (IsEmptyResponse(result)) {
-					score = -1; //No score saved, any valid score should overwrite this.
+					savedHeavenly = 0;
+					savedCookies = -1; //No score saved, any valid score should overwrite this.
 				} else {
-					score = result.ChromeCookiesScore[0];
+					savedHeavenly = result.ChromeCookiesScore[0];
+					savedCookies = result.ChromeCookiesScore[1];
 				}
 				
-				//Is the score lower than ours? If so, push our new score to sync.
-				if (score < request.cookies) {
-					//Save new score
-					chrome.storage.sync.set({'ChromeCookiesScore': [request.cookies, request.save] });
-				} 
+				// Does the saved score have more heavenly chips than us? If so, that one is better.
+				if (savedHeavenly < request.heavenlyCookies) {
+					SaveNewScore(request);
+				} else if (savedHeavenly == request.heavenlyCookies) {
+					//If the heavenly count matches, decide based on cookies.
+					if (savedCookies < request.cookies) {
+						SaveNewScore(request);
+					} 
+				} //Else, we don't save anything.
+					
 				sendResponse({ response:true });
 			});
 			return true;			
@@ -23,7 +30,7 @@ chrome.runtime.onMessageExternal.addListener(
 				if(IsEmptyResponse(obj)){
 					sendResponse({ valid:false });
 				} else {
-					sendResponse({ valid:true, save:obj.ChromeCookiesScore[1] });
+					sendResponse({ valid:true, save:obj.ChromeCookiesScore[2] });
 				}
 			});
 			return true;
@@ -36,6 +43,11 @@ chrome.runtime.onMessageExternal.addListener(
 		}
     }
 );
+
+function SaveNewScore(request) {
+	//Save new score
+	chrome.storage.sync.set({'ChromeCookiesScore': [request.heavenlyCookies, request.cookies, request.save] });
+}
 
 function IsEmptyResponse(input) {
 	return Object.getOwnPropertyNames(input).length === 0;

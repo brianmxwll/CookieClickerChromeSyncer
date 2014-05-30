@@ -89,7 +89,8 @@ function SetCustomSave() {
 
 			var params = {
 				action: 'save',
-				cookies: Game.cookies,
+				heavenlyCookies: Game.prestige['Heavenly chips'],
+				cookies: Game.cookiesEarned + Game.cookiesReset,
 				save: Game.WriteSave(1)
 			};
 
