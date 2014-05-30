@@ -21,6 +21,10 @@ chrome.runtime.onMessageExternal.addListener(
 				sendResponse({ save: obj.ChromeCookiesScore[1] });
 			});
 			return true;
+		} else if (request.action == 'reset') {
+			chrome.storage.sync.remove('ChromeCookiesScore', function (obj) {
+				sendResponse({ response: 'true' });
+			});
 		} else {
 			sendResponse({ response: 'false' });
 		}

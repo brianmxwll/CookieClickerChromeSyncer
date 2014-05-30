@@ -27,11 +27,23 @@ var cookieSaver = {
 			if (parent != null) {
 				var saveListing = parent.childNodes[1];
 				if (saveListing != null) {
-					var div = document.createElement('div');
-					div.innerHTML = '<a class="option" onclick="LoadFromGoogle();">Load From Google</a><label>Load the game from Google online storage.</label>';
-					div.className = 'listing';
+					//Create the Load From Google button
+					var loadGoogleDiv = document.createElement('div');
+					loadGoogleDiv.innerHTML = '<a class="option" onclick="LoadFromGoogle();">Load From Google</a><label>Load the game from Google online storage.</label>';
+					loadGoogleDiv.className = 'listing';
 					
-					parent.insertBefore(div, saveListing);
+					//Create the Reset Google Score
+					var resetGoogleDiv = document.createElement('div');
+					resetGoogleDiv.innerHTML = '<a class="option" onclick="ResetGoogle();">Reset Google Score</a><label>Reset the score saved to Google online storage.</label>';
+					resetGoogleDiv.className = 'listing';
+					
+					//Add the buttons.
+					parent.insertBefore(loadGoogleDiv, saveListing);
+					parent.insertBefore(resetGoogleDiv, saveListing);
+					
+					//Fix the save text.
+					saveListing.getElementsByTagName('label')[0].innerHTML = 'Save manually (the game autosaves every 60 seconds). This also saves to google storage (as does autosave).';
+					
 				} else { alert('Cant find save listing.'); };
 			} else { alert('Cant find parent.'); }
 		} else { alert('Cant find menu.'); }
