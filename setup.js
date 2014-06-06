@@ -1,5 +1,3 @@
-console.log('Setup.js init');
-
 setTimeout(function() {
 	var s = document.createElement('script');
 	//console.log(chrome.storage.sync);
