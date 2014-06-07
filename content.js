@@ -17,8 +17,10 @@ function LoadFromGoogle() {
 			if (response.valid) {
 				Game.LoadSave(response.save);
 				console.log('ChromeCookies: Game loaded from Google.');
+				UserAlert('Game loaded from Google sync');
 			} else {
 				console.log('ChromeCookies: No game saved to Google storage.');
+				UserAlert('No game saved to Google sync.');
 			}
 	});
 }
@@ -33,8 +35,8 @@ function ResetGoogle() {
 	// Make a simple request:
 	chrome.runtime.sendMessage(editorExtensionId, params,
 		function(response) {
-			console.log(response.response);
 			console.log('Google save reset.');
+			UserAlert('Game score on Google sync has been reset/deleted');
 	});
 }
 
@@ -98,14 +100,19 @@ function AddChromeCookiesButtons() {
 			} else {
 				makePrimaryDiv.innerHTML = '<a class="option" onclick="SetPrimary();">Set Primary</a><label>This currently is NOT the primary browser.</label>';
 			}
-			
 			makePrimaryDiv.className = 'listing';
+			
+			// Create the "Send this game to primary" button
+			var sendToPrimaryDiv = document.createElement('div');
+			sendToPrimaryDiv.innerHTML = '<a class="option" onclick="SendToPrimary();">Send Game to Primary</a><label>Send this game to all browsers marked "primary" (see button above).</label>';
+			sendToPrimaryDiv.className = 'listing';
 			
 			//Add the buttons.
 			parent.insertBefore(titleDiv, settingsDiv);
 			parent.insertBefore(loadGoogleDiv, settingsDiv);
 			parent.insertBefore(resetGoogleDiv, settingsDiv);
 			parent.insertBefore(makePrimaryDiv, settingsDiv);
+			parent.insertBefore(sendToPrimaryDiv, settingsDiv);
 			
 			var saveListing = parent.childNodes[1];
 			if (saveListing != null) {
@@ -173,10 +180,13 @@ function SetPrimary() {
 
 	chrome.runtime.sendMessage(editorExtensionId, params,
 		function(response) {
+		//No response action required, insert here if needed.
 	});
 	
 	//Force the menu to redraw.
 	Game.UpdateMenu();
+	
+	UserAlert('Set as primary');
 }
 
 function RemovePrimary() {
@@ -187,10 +197,38 @@ function RemovePrimary() {
 
 	chrome.runtime.sendMessage(editorExtensionId, params,
 		function(response) {
+		//No response action required, insert here if needed.
 	});
 	
 	//Force the menu to redraw.
 	Game.UpdateMenu();
+	
+	UserAlert('Removed as primary');
+}
+
+function SendToPrimary() {
+	var exportSave = Game.WriteSave(1);
+	var pl = [Date.now(), exportSave];
+	
+	var params = {
+		action: 'sendtoprimary',
+		heavenlyCookies: Game.prestige['Heavenly chips'],
+		cookies: Game.cookiesEarned + Game.cookiesReset,
+		save: exportSave,
+		primaryLoad: pl
+	};
+	
+	chrome.runtime.sendMessage(editorExtensionId, params,
+		function(response) {
+		//Force the menu to redraw.
+		Game.UpdateMenu();
+		
+		UserAlert('Game sent to primary browsers');
+	});
+}
+
+function UserAlert(text) {
+	Game.Notify(text,'','',2);
 }
 
 // Run on start.
