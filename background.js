@@ -61,7 +61,11 @@ function Save_Action(sendResponse, request) {
 		
 		//We have the server score, are we primary AND instructed to load a new game? If so, load it.
 		if (localStorage['ChromeCookiesIsPrimary'] == 'true') { //Only record if we are primary as well. Don't want to load this game again.
+			console.log('we are primary, do we load');
 			//We are primary, do we need to load the game?
+			console.log('primaryLoad' + primaryLoad[TIMESTAMP]);
+			console.log('localStorage' + localStorage['ChromeCookiesTimeStamp']);
+			
 			if (primaryLoad[TIMESTAMP] > localStorage['ChromeCookiesTimeStamp']) {
 				console.log('BackgroundThread: Game instructed to load from sync. Loading.');
 				//Timestamp on server is newer, we should load that one.
