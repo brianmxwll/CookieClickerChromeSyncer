@@ -49,6 +49,7 @@ chrome.runtime.onMessageExternal.addListener(
 function Save_Action(sendResponse, request) {
 	//Get the current sync data.
 	chrome.storage.sync.get('ChromeCookiesScore', function (result) {
+		console.log('Retrieved save:', result);
 		if (IsEmptyResponse(result)) {
 			savedHeavenly = 0;
 			savedCookies = -1; //No score saved, any valid score should overwrite this.
@@ -58,6 +59,7 @@ function Save_Action(sendResponse, request) {
 			savedCookies = result.ChromeCookiesScore.totalCookies;
 			primaryLoad = result.ChromeCookiesScore.primaryLoad;
 		}
+		console.log('primaryLoad:', primaryLoad);
 		
 		//We have the server score, are we primary AND instructed to load a new game? If so, load it.
 		if (localStorage['ChromeCookiesIsPrimary'] == 'true') { //Only record if we are primary as well. Don't want to load this game again.
@@ -81,34 +83,26 @@ function Save_Action(sendResponse, request) {
 				return;
 			}
 		}
+
+		//Fallthrough. If we get here, we do not need to load a game at this time.
 		
-		chrome.storage.local.get('ChromeCookiesIsPrimary', function(localResult) {
-			if (!IsEmptyResponse(localResult)) {
-				if (localResult.ChromeCookiesIsPrimary.isPrimary) { //Nothing saved yet. Store false as a default.
-					
-				}
-			}
-			
-			//Fallthrough. If we get here, we do not need to load a game at this time.
-			
-			//Build the potential new save.
-			var thisSave = CcsSave(request.heavenlyCookies, request.cookies, request.save, primaryLoad);
-		
-			// Does the saved score have more heavenly chips than us? If so, that one is better.
-			if (savedHeavenly < request.heavenlyCookies) {
+		//Build the potential new save.
+		var thisSave = CcsSave(request.heavenlyCookies, request.cookies, request.save, primaryLoad);
+	
+		// Does the saved score have more heavenly chips than us? If so, that one is better.
+		if (savedHeavenly < request.heavenlyCookies) {
+			SaveNewScore(thisSave);
+			console.log('BackgroundThread: Game saved, heavenly chip count is higher.');
+		} else if (savedHeavenly == request.heavenlyCookies) {
+			//If the heavenly count matches, decide based on cookies.
+			if (savedCookies < request.cookies) {
 				SaveNewScore(thisSave);
-				console.log('BackgroundThread: Game saved, heavenly chip count is higher.');
-			} else if (savedHeavenly == request.heavenlyCookies) {
-				//If the heavenly count matches, decide based on cookies.
-				if (savedCookies < request.cookies) {
-					SaveNewScore(thisSave);
-					console.log('BackgroundThread: Game saved, cookie count is higher.');
-				} 
-			} else {//Else, we don't save anything.
-				console.log('BackgroundThread: Game not saved to Google, previous game has a better score');
-			}
-			sendResponse({ response:true, loadsave:'nope' });
-		});
+				console.log('BackgroundThread: Game saved, cookie count is higher.');
+			} 
+		} else {//Else, we don't save anything.
+			console.log('BackgroundThread: Game not saved to Google, previous game has a better score');
+		}
+		sendResponse({ response:true, loadsave:'nope' });
 	});
 }
 
