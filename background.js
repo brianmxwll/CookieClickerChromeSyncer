@@ -85,9 +85,6 @@ function Save_Action(sendResponse, request) {
 				}
 			}
 			
-			
-			
-			
 			//Fallthrough. If we get here, we do not need to load a game at this time.
 			
 			//Build the potential new save.
@@ -122,16 +119,15 @@ function Load_Action(sendResponse) {
 }
 
 function IsPrimary_Action(sendResponse) {
-	chrome.storage.local.get('ChromeCookiesIsPrimary', function(result) {
-		if (IsEmptyResponse(result)) { //Nothing saved yet. Store false as a default.
-			isPrimary = false
-			var save = CcipSave(false, EMPTY_SAVE);
-			chrome.storage.local.set({'ChromeCookiesIsPrimary': save });
-		} else {
-			isPrimary = result.ChromeCookiesIsPrimary.isPrimary;
-		}
-		sendResponse({ valid:true, primary:isPrimary });
-	});
+	if (localStorage['ChromeCookiesIsPrimary'] == 'true') {
+		sendResponse({ valid:true, primary:true });
+	} else {
+		//Save blank
+		localStorage['ChromeCookiesIsPrimary'] = false;
+		localStorage['ChromeCookiesTimeStamp'] = EMPTY_SAVE[TIMESTAMP];
+		localStorage['ChromeCookiesLastLoad'] = EMPTY_SAVE[SAVE_STATE];
+		sendResponse({ valid:true, primary:false });
+	}
 }
 
 function SetPrimary_Action(sendResponse) {
