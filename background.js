@@ -30,6 +30,8 @@ chrome.runtime.onMessageExternal.addListener(
 			return true;
 		} else if (request.action == 'removeprimary') {
 			var save = CcipSave(false, EMPTY_SAVE); //We are primary: false, 0 timestamp, empty save.
+			localStorage['test'] = '4567';
+			console.log('val 4567');
 			chrome.storage.local.set({'ChromeCookiesIsPrimary': save });
 			sendResponse({ response:true });
 		} else if (request.action == 'sendtoprimary') {
@@ -60,23 +62,30 @@ function Save_Action(sendResponse, request) {
 		
 		//We have the server score, are we primary AND instructed to load a new game? If so, load it.
 		chrome.storage.local.get('ChromeCookiesIsPrimary', function(localResult) {
-			if ((!IsEmptyResponse(localResult)) && localResult.ChromeCookiesIsPrimary.isPrimary) { //Nothing saved yet. Store false as a default.
-				//We are primary, do we need to load the game?
-				if (primaryLoad[TIMESTAMP] > localResult.ChromeCookiesIsPrimary.primaryLoad[TIMESTAMP]) {
-					console.log('BackgroundThread: Game instructed to load from sync. Loading.');
-					//Timestamp on server is newer, we should load that one.
-					var newSave = primaryLoad[SAVE_STATE];
-					
-					//Before we send the response though, save our local setting to note that we already loaded this one.
-					var save = CcipSave(localResult.ChromeCookiesIsPrimary.isPrimary, primaryLoad);
-					chrome.storage.local.set({'ChromeCookiesIsPrimary': save });
-		
-					sendResponse({ response:true, loadsave:newSave });
-					
-					//We don't want to run anything below this. Halt!
-					return;
+			console.log('Load local!');
+			if (!IsEmptyResponse(localResult)) {
+				console.log('Response not empty');
+				if (localResult.ChromeCookiesIsPrimary.isPrimary) { //Nothing saved yet. Store false as a default.
+					//We are primary, do we need to load the game?
+					if (primaryLoad[TIMESTAMP] > localResult.ChromeCookiesIsPrimary.primaryLoad[TIMESTAMP]) {
+						console.log('BackgroundThread: Game instructed to load from sync. Loading.');
+						//Timestamp on server is newer, we should load that one.
+						var newSave = primaryLoad[SAVE_STATE];
+						
+						//Before we send the response though, save our local setting to note that we already loaded this one.
+						var save = CcipSave(localResult.ChromeCookiesIsPrimary.isPrimary, primaryLoad);
+						chrome.storage.local.set({'ChromeCookiesIsPrimary': save });
+			
+						sendResponse({ response:true, loadsave:newSave });
+						
+						//We don't want to run anything below this. Halt!
+						return;
+					}
 				}
 			}
+			
+			
+			
 			
 			//Fallthrough. If we get here, we do not need to load a game at this time.
 			
@@ -134,6 +143,9 @@ function SetPrimary_Action(sendResponse) {
 		
 		//We are setting
 		var save = CcipSave(true, primaryLoad);
+		
+		localStorage['test'] = '1234';
+		console.log('val set 1234');
 		
 		chrome.storage.local.set({'ChromeCookiesIsPrimary': save });
 		sendResponse({ response:true, latest:primaryLoad });
