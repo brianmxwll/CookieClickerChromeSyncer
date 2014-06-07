@@ -1,6 +1,8 @@
 // The ID of the ChromeCookies extension.
 var editorExtensionId = "kfpefnknagfhjhigfcalmagikllodadh";
 
+var pushingPrimary = false; //If true, customSave won't fire.
+
 var lastSave = 0;
 var isPrimary = false;
 
@@ -138,8 +140,8 @@ function CustomSave() {
 // Tell the game to run our save method after the normal one executes.
 function SetCustomSave() {
 	Game.customSave.push(function() {
-		//If we have not saved in the last 5 seconds.
-		if (Date.now() - lastSave > 5000) {
+		//If we have not saved in the last 5 seconds and we aren't saving a new primary.
+		if (Date.now() - lastSave > 5000 && !pushingPrimary) {
 			console.log('ChromeCookies: Save executing.');
 			lastSave = Date.now();
 
@@ -207,7 +209,9 @@ function RemovePrimary() {
 }
 
 function SendToPrimary() {
+	pushingPrimary = true;
 	var exportSave = Game.WriteSave(1);
+	
 	var pl = [Date.now(), exportSave];
 	
 	var params = {
@@ -225,6 +229,7 @@ function SendToPrimary() {
 		
 		UserAlert('Game sent to primary browsers');
 	});
+	pushingPrimary = false;
 }
 
 function UserAlert(text) {

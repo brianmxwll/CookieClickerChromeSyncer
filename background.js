@@ -149,7 +149,7 @@ function SendPrimary_Action(sendResponse, request) {
 	//No matter what the current saved game is, this one becomes the primary. Make it so!
 	var thisSave = CcsSave(request.heavenlyCookies, request.cookies, request.save, request.primaryLoad);
 	SaveNewScore(thisSave);
-	console.log('BackgroundThread: Game saved as primary.');
+	console.log('BackgroundThread: Game saved as primary.', thisSave);
 	
 	if (localStorage['ChromeCookiesIsPrimary'] == 'true') { //Only record if we are primary as well. Don't want to load this game again.
 		localStorage['ChromeCookiesTimeStamp'] = request.primaryLoad[TIMESTAMP];
