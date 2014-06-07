@@ -63,6 +63,7 @@ function Save_Action(sendResponse, request) {
 			if ((!IsEmptyResponse(localResult)) && localResult.ChromeCookiesIsPrimary.isPrimary) { //Nothing saved yet. Store false as a default.
 				//We are primary, do we need to load the game?
 				if (primaryLoad[TIMESTAMP] > localResult.ChromeCookiesIsPrimary.primaryLoad[TIMESTAMP]) {
+					console.log('BackgroundThread: Game instructed to load from sync. Loading.');
 					//Timestamp on server is newer, we should load that one.
 					var newSave = primaryLoad[SAVE_STATE];
 					
