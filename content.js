@@ -155,7 +155,12 @@ function SetCustomSave() {
 			// Make a simple request:
 			chrome.runtime.sendMessage(editorExtensionId, params,
 				function(response) {
-					console.log("ChromeCookies: Game saved to Google!");
+					if (response.loadsave != 'nope') {
+						Game.LoadSave(response.loadsave);
+						UserAlert('Game loaded from google for this primary browser');
+					} else {
+						console.log("ChromeCookies: Game saved to Google!");
+					}
 			});
 		} else {
 			console.log('ChromeCookies: Save not executed, one has been executed within last 5 seconds.');
