@@ -1,7 +1,5 @@
 var TIMESTAMP = 0;
 var SAVE_STATE = 1;
-
-//Static values
 var EMPTY_SAVE = [0, ''];
 
 // Establish the background listener. This method will receive all messages sent from the page (save, load, reset).
@@ -17,7 +15,7 @@ chrome.runtime.onMessageExternal.addListener(
 			return true;
 		} else if (request.action == 'reset') {
 			chrome.storage.sync.remove('ChromeCookiesScore', function (obj) {
-				sendResponse({ response:true });
+				sendResponse({});
 			});
 		} else if (request.action == 'isprimary') {
 			// Find out if this instance is marked as a primary one.
@@ -29,15 +27,13 @@ chrome.runtime.onMessageExternal.addListener(
 			SetPrimary_Action(sendResponse);
 			return true;
 		} else if (request.action == 'removeprimary') {
-			localStorage['ChromeCookiesIsPrimary'] = false;
-			localStorage['ChromeCookiesTimeStamp'] = EMPTY_SAVE[TIMESTAMP];
-			localStorage['ChromeCookiesLastLoad'] = EMPTY_SAVE[SAVE_STATE];
-			sendResponse({ response:true });
+			SetLocalStorage(false, EMPTY_SAVE[TIMESTAMP], EMPTY_SAVE[SAVE_STATE]);
+			sendResponse({});
 		} else if (request.action == 'sendtoprimary') {
 			SendPrimary_Action(sendResponse, request);
 			return true;
 		} else {
-			sendResponse({ response:false });
+			sendResponse({});
 		}
     }
 );
@@ -49,7 +45,6 @@ chrome.runtime.onMessageExternal.addListener(
 function Save_Action(sendResponse, request) {
 	//Get the current sync data.
 	chrome.storage.sync.get('ChromeCookiesScore', function (result) {
-		console.log('Retrieved save:', result);
 		if (IsEmptyResponse(result)) {
 			savedHeavenly = 0;
 			savedCookies = -1; //No score saved, any valid score should overwrite this.
@@ -59,25 +54,19 @@ function Save_Action(sendResponse, request) {
 			savedCookies = result.ChromeCookiesScore.totalCookies;
 			primaryLoad = result.ChromeCookiesScore.primaryLoad;
 		}
-		console.log('primaryLoad:', primaryLoad);
 		
 		//We have the server score, are we primary AND instructed to load a new game? If so, load it.
-		if (localStorage['ChromeCookiesIsPrimary'] == 'true') { //Only record if we are primary as well. Don't want to load this game again.
-			console.log('we are primary, do we load');
+		if (localStorage['ChromeCookiesIsPrimary'] == 'true') {
 			//We are primary, do we need to load the game?
-			console.log('primaryLoad' + primaryLoad[TIMESTAMP]);
-			console.log('localStorage' + localStorage['ChromeCookiesTimeStamp']);
-			
-			if (primaryLoad[TIMESTAMP] > localStorage['ChromeCookiesTimeStamp']) {
+			if (primaryLoad[TIMESTAMP] > localStorage['ChromeCookiesTimestamp']) { //Compare the timestamps. If there is a newer game to load, do so.
 				console.log('BackgroundThread: Game instructed to load from sync. Loading.');
 				//Timestamp on server is newer, we should load that one.
 				var newSave = primaryLoad[SAVE_STATE];
 				
 				//Before we send the response though, save our local setting to note that we already loaded this one.
-				localStorage['ChromeCookiesTimeStamp'] = primaryLoad[TIMESTAMP];
-				localStorage['ChromeCookiesLastLoad'] = primaryLoad[SAVE_STATE];
+				SetLocalStorage(null, primaryLoad[TIMESTAMP], primaryLoad[SAVE_STATE]);
 				
-				sendResponse({ response:true, loadsave:newSave });
+				sendResponse({ loadsave:newSave });
 				
 				//We don't want to run anything below this. Halt!
 				return;
@@ -102,7 +91,7 @@ function Save_Action(sendResponse, request) {
 		} else {//Else, we don't save anything.
 			console.log('BackgroundThread: Game not saved to Google, previous game has a better score');
 		}
-		sendResponse({ response:true, loadsave:'nope' });
+		sendResponse({ loadsave:'nope' });
 	});
 }
 
@@ -118,13 +107,11 @@ function Load_Action(sendResponse) {
 
 function IsPrimary_Action(sendResponse) {
 	if (localStorage['ChromeCookiesIsPrimary'] == 'true') {
-		sendResponse({ valid:true, primary:true });
+		sendResponse({ primary:true });
 	} else {
 		//Save blank
-		localStorage['ChromeCookiesIsPrimary'] = false;
-		localStorage['ChromeCookiesTimeStamp'] = EMPTY_SAVE[TIMESTAMP];
-		localStorage['ChromeCookiesLastLoad'] = EMPTY_SAVE[SAVE_STATE];
-		sendResponse({ valid:true, primary:false });
+		SetLocalStorage(false, EMPTY_SAVE[TIMESTAMP], EMPTY_SAVE[SAVE_STATE]);
+		sendResponse({ primary:false });
 	}
 }
 
@@ -137,11 +124,9 @@ function SetPrimary_Action(sendResponse) {
 		}
 		
 		//We must save these in localStorage (not chrome.storage) to keep persistence. chrome.storage.local doesn't seem to last on refresh.
-		localStorage['ChromeCookiesIsPrimary'] = true;
-		localStorage['ChromeCookiesTimeStamp'] = primaryLoad[TIMESTAMP];
-		localStorage['ChromeCookiesLastLoad'] = primaryLoad[SAVE_STATE];
+		SetLocalStorage(true, primaryLoad[TIMESTAMP], primaryLoad[SAVE_STATE]);
 
-		sendResponse({ response:true, latest:primaryLoad });
+		sendResponse({ latest:primaryLoad });
 	});
 }
 
@@ -152,12 +137,11 @@ function SendPrimary_Action(sendResponse, request) {
 	console.log('BackgroundThread: Game saved as primary.', thisSave);
 	
 	if (localStorage['ChromeCookiesIsPrimary'] == 'true') { //Only record if we are primary as well. Don't want to load this game again.
-		localStorage['ChromeCookiesTimeStamp'] = request.primaryLoad[TIMESTAMP];
-		localStorage['ChromeCookiesLastLoad'] = request.primaryLoad[SAVE_STATE];
+		SetLocalStorage(null, request.primaryLoad[TIMESTAMP], request.primaryLoad[SAVE_STATE]);
 		console.log('BackgroundThread: Local primary updated.');
 	}
 
-	sendResponse({ response:true });
+	sendResponse({});
 }
 
 //
@@ -174,13 +158,16 @@ function CcsSave(chips, cookies, svExport, priLoad) {
 	return save;
 }
 
-function CcipSave(primary, load) {
-	//Load is an array, length of two. Slot 0 = timestamp, slot 1 = the saved game.
-	var save = 
-	{
-		isPrimary: primary,
-		primaryLoad: load
-	};
+function SetLocalStorage(isPrimary, timestamp, lastLoad) {
+	if (isPrimary != null) {
+		localStorage['ChromeCookiesIsPrimary'] = isPrimary;
+	}
+	if (timestamp != null) {
+		localStorage['ChromeCookiesTimestamp'] = timestamp;
+	}
+	if (lastLoad != null) {
+		localStorage['ChromeCookiesLastLoad'] = lastLoad;
+	}
 }
 
 function SaveNewScore(save) {

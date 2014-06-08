@@ -1,43 +1,37 @@
-// The ID of the ChromeCookies extension.
-var editorExtensionId = "kfpefnknagfhjhigfcalmagikllodadh";
+// Get the ID of the ChromeCookies extension. Need it for later.
+var scriptTag = document.getElementById('chromeCookiesScript');
+var editorExtensionId = scriptTag.getAttribute('extId');
 
-var pushingPrimary = false; //If true, customSave won't fire.
+var fetchingSave = false; //If true, customSave won't fire.
 
 var lastSave = 0;
 var isPrimary = false;
 
 // Mostly self explanatory. Go to Google sync storage and retrieve the latest game.
 function LoadFromGoogle() {
-	console.log('ChromeCookies: Loading from Google.');
 	var params = {
 		action: 'load'
 	};
 
-	// Make a simple request:
 	chrome.runtime.sendMessage(editorExtensionId, params,
 		function(response) {
 			if (response.valid) {
 				Game.LoadSave(response.save);
-				console.log('ChromeCookies: Game loaded from Google.');
 				UserAlert('Game loaded from Google sync');
 			} else {
-				console.log('ChromeCookies: No game saved to Google storage.');
-				UserAlert('No game saved to Google sync.');
+				UserAlert('No game saved to Google sync');
 			}
 	});
 }
 
 // Go to Google sync storage and remove all previously saved items. 
 function ResetGoogle() {
-	console.log('ChromeCookies: Resetting Google storage save.');
 	var params = {
 		action: 'reset'
 	};
 
-	// Make a simple request:
 	chrome.runtime.sendMessage(editorExtensionId, params,
 		function(response) {
-			console.log('Google save reset.');
 			UserAlert('Game score on Google sync has been reset/deleted');
 	});
 }
@@ -118,11 +112,8 @@ function AddChromeCookiesButtons() {
 			
 			var saveListing = parent.childNodes[1];
 			if (saveListing != null) {
-				//Was here
-				
 				//Fix the save text.
-				saveListing.getElementsByTagName('label')[0].innerHTML = 'Save manually (the game autosaves every 60 seconds). This also saves to google storage (as does autosave).';
-				
+				saveListing.getElementsByTagName('label')[0].innerHTML = 'Save manually (the game autosaves every 60 seconds). This also saves to google storage (as does autosave).';	
 			} else { console.log('ChromeCookies: Cant find save listing.'); };
 		} else { console.log('ChromeCookies: Cant find parent.'); }
 	} else { console.log('ChromeCookies: Cant find menu.'); }
@@ -140,30 +131,24 @@ function CustomSave() {
 // Tell the game to run our save method after the normal one executes.
 function SetCustomSave() {
 	Game.customSave.push(function() {
-		//If we have not saved in the last 5 seconds and we aren't saving a new primary.
-		if (Date.now() - lastSave > 5000 && !pushingPrimary) {
-			console.log('ChromeCookies: Save executing.');
+		//Make sure we didn't cause this execution.
+		if (!fetchingSave) {
 			lastSave = Date.now();
 
 			var params = {
 				action: 'save',
 				heavenlyCookies: Game.prestige['Heavenly chips'],
 				cookies: Game.cookiesEarned + Game.cookiesReset,
-				save: Game.WriteSave(1)
+				save: GetSave()
 			};
 
-			// Make a simple request:
 			chrome.runtime.sendMessage(editorExtensionId, params,
 				function(response) {
 					if (response.loadsave != 'nope') {
 						Game.LoadSave(response.loadsave);
 						UserAlert('Game loaded from google for this primary browser');
-					} else {
-						console.log("ChromeCookies: Game saved to Google!");
 					}
 			});
-		} else {
-			console.log('ChromeCookies: Save not executed, one has been executed within last 5 seconds.');
 		}
 	});
 }
@@ -187,13 +172,11 @@ function SetPrimary() {
 
 	chrome.runtime.sendMessage(editorExtensionId, params,
 		function(response) {
-		//No response action required, insert here if needed.
+		//Force the menu to redraw.
+		Game.UpdateMenu();
+		
+		UserAlert('Set as primary');
 	});
-	
-	//Force the menu to redraw.
-	Game.UpdateMenu();
-	
-	UserAlert('Set as primary');
 }
 
 function RemovePrimary() {
@@ -204,18 +187,15 @@ function RemovePrimary() {
 
 	chrome.runtime.sendMessage(editorExtensionId, params,
 		function(response) {
-		//No response action required, insert here if needed.
+		//Force the menu to redraw.
+		Game.UpdateMenu();
+		
+		UserAlert('Removed as primary');
 	});
-	
-	//Force the menu to redraw.
-	Game.UpdateMenu();
-	
-	UserAlert('Removed as primary');
 }
 
 function SendToPrimary() {
-	pushingPrimary = true;
-	var exportSave = Game.WriteSave(1);
+	var exportSave = GetSave();
 	
 	var pl = [Date.now(), exportSave];
 	
@@ -234,11 +214,19 @@ function SendToPrimary() {
 		
 		UserAlert('Game sent to primary browsers');
 	});
-	pushingPrimary = false;
 }
 
 function UserAlert(text) {
 	Game.Notify(text,'','',2);
+}
+
+function GetSave() {
+	//Set a var to note that we are starting a save. When the save method trips our custom save method (again), this var 
+	//prevents it from saving the game to google a second time.
+	fetchingSave = true;
+	var save = Game.WriteSave(1);
+	fetchingSave = false;
+	return save;
 }
 
 // Run on start.
