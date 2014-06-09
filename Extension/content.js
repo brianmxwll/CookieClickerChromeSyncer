@@ -76,7 +76,7 @@ function AddChromeCookiesButtons() {
 			
 			//Create the title
 			var titleDiv = document.createElement('div');
-			titleDiv.innerHTML = 'ChromeCookies';
+			titleDiv.innerHTML = 'Cookie Clicker, Chrome Syncer';
 			titleDiv.className = 'title';
 			
 			//Create the Load From Google button
