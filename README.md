@@ -8,3 +8,5 @@ This extension serves two main purposes:
 2. It allows you to send a saved game to your home (or other) computer automatically. You set (one or more) browsers to "primary" and when you decide, you can tell all "primary" browsers to load your current game. This allows you to login from a friends house (or work/school), make changes to your game, then send them back to your home computer so you can continue earning cookies.
 
 Author note: This extension was built to meet my personal needs. While I am open to feature requests, I do not intend on growing this project into anything larger than it should be. Please report any defects or bugs, I am certainly interested in fixing those ASAP.
+
+Chrome Web Store [[Link](https://chrome.google.com/webstore/detail/cookie-clicker-chrome-syn/aapfoikfhpcloablpfigiihnlnlhggjn)]
